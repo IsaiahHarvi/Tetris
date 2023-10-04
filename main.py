@@ -1,46 +1,44 @@
 from src import *
 
-
-# Initialize pygame
-pygame.init()
-pygame.mixer.init()
-
-# Create the screen
-screen = pygame.display.set_mode((SCREEN_X, SCREEN_Y)) # 600, 800
-pygame.display.set_caption("Tetris")
-pygame.display.set_icon(pygame.image.load("Assets/icon.jpg"))
-
-# Background Music
-pygame.mixer.music.load("Assets/soundtrack.mp3")
-pygame.mixer.music.play(-1) # Loop
-pygame.mixer.music.set_volume(0.10) # Start at 10%
-
-# Board
-board = [[None for _ in range(COLS)] for _ in range(ROWS)]
-
 # Game Loop
-clk = pygame.time.Clock()
-lastDrop = pygame.time.get_ticks()
-piece = random.choice(pieces)()
+pieceQueue = [random.choice(pieces), random.choice(pieces), random.choice(pieces)] # Queue of pieces, one is added each placed piece
+piece = pieceQueue.pop()()  # Start with the first piece
+nextPiece = pieceQueue.pop()()  # Initialize the next piece
 
 while True:
-    clk.tick(60)
     screen.fill((12,12,12))
-
+    clk.tick(60)
 
     # Screen Drawing
-    drawGrid(screen)
-    drawBoard(screen, board)
+    drawGrid() # Draw the grid
+    drawBoard() # Draw the pieces onto the grid from the board
+    drawNextPiece(piece=nextPiece) # Show the next piece on the left corner
+    drawScore(score) # Show the score on the right corner
 
+    # Draw the sound toggle button
+    if soundOn:
+        soundButton("Music: ON")
+    else:
+        soundButton("Muic: OFF")
+
+    # Lower Piece every second
     currentTime = pygame.time.get_ticks()
     if currentTime - lastDrop > DROP_INTERVAL:
         piece.move(0, 1)  # Move down by one grid unit
         lastDrop = currentTime
 
-    if collision(board, piece.blocks):
-        placePiece(board, piece)
-        piece = random.choice(pieces)()
-        print(f"New piece spawned at coordinates: {piece.blocks}")
+    # If collision, but not block out
+    if collision(piece.blocks) == 1:
+        placePiece(piece) # Place the piece on the board
+        pieceQueue.append(random.choice(pieces)) # Add another piece to the queue
+        rowsRemoved = removeCompletedRows(board)  # Check and remove completed rows
+        score += (rowsRemoved * 200) if rowsRemoved == 4 else (rowsRemoved * 100) # If tetris double the score
+        piece = nextPiece # Get the next already seleced piece
+        nextPiece = pieceQueue.pop()() # Get the next piece from queue
+
+    # If block out
+    elif collision(piece.blocks) == 2:
+        pygame.draw.rect(screen, (255, 0, 0), (GRID_OFFSET_X, GRID_OFFSET_Y, WIDTH, HEIGHT)) # Draw a red rectangle over the grid
 
     # Event Handler
     for event in pygame.event.get():
@@ -59,10 +57,26 @@ while True:
                 
             if event.key in mappedKeys['down']: # Down Arrow/S - Move down
                 piece.move(0, 1)  # Move down by one grid unit
+                lastDrop = pygame.time.get_ticks() # Reset the last drop time so it doesnt double lower on top of the user input
+
+            if event.key in mappedKeys['drop']: # Space/Enter - Drop Piece
+                while collision(piece.blocks) == 0: # Move down until a collision
+                    piece.move(0, 1)
 
             if event.key in mappedKeys['rotate']: # R - Rotate
-                print("Rotate")
-                
+                piece.rotate()
+        
+        # Click Mouse
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            x, y = pygame.mouse.get_pos()
+            if 20 <= x <= 20 + 100 and 700 <= y <= 700 + 50: # If clicking in bounds of sound button
+                soundOn = not soundOn  # Toggle Music
+                if soundOn:
+                    pygame.mixer.music.unpause()
+                else:
+                    pygame.mixer.music.pause()
+
+    # Draw Piece
     piece.draw(screen)
 
     # Update Screen
