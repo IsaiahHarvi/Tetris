@@ -1,9 +1,17 @@
-
-
 import pygame 
 import random
 import time
-import os
+import os, sys, subprocess
+
+# Check to see if pygame is installed
+try:
+    import pygame
+except ImportError:
+    print("pygame is not installed. Installing it now...")
+    print("If issues persist, please install it using 'pip install pygame' or 'pip3 install pygame")
+
+    subprocess.call([sys.executable, "-m", "pip", "install", "pygame"])
+    import pygame
 
 # CONSTANTS
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -177,8 +185,6 @@ def darkerShade(color, shade_percentage=0.7):
 def updateScore(scoreDict):
     scoreDict["totalClearedRows"] += scoreDict["clearedRows"]
     LEVEL = scoreDict["totalClearedRows"] // 10 # Next level every 10 cleared lines
-    DROP_INTERVAL = max(800.16 - (83.35 * LEVEL), 16.67)  # Like the NES--Drop every 800 milliseconds and subtract 83 milliseconds every level, but not going below 16.67 milliseconds
-    print(f"Level: {LEVEL}, Drop Interval: {DROP_INTERVAL} ms")  # Printing the level and drop interval for debugging purposes
 
     if scoreDict["clearedRows"] == 1:
         return 40 * (LEVEL+1)

@@ -51,7 +51,7 @@ def gameLoop():
         "score" : 0 # Current score
     }
     LEVEL = scoreDict["clearedRows"] // 10 # Level is the number of rows cleared divided by 10
-    DROP_INTERVAL =  800.16 - (83.35 * scoreDict["clearedRows"])  # Like the NES--Drop every 800milisecond  and add subtract 83 miliseconds every 10 rows
+    DROP_INTERVAL =  800.16 - (83.35 * LEVEL)  # Like the NES--Drop every 800milisecond  and add subtract 83 miliseconds every 10 rows
     lastDrop = pygame.time.get_ticks() # Variable to track time since the last drop to move the block down every 1 sec
 
     inGame, inMenu = True, False
