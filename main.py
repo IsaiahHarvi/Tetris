@@ -6,7 +6,7 @@ piece = pieceQueue.pop()()  # Start with the first piece
 nextPiece = pieceQueue.pop()()  # Initialize the next piece
 
 while True:
-    screen.fill((12,12,12))
+    screen.fill((110, 110, 110)) # Grey Background
     clk.tick(60)
 
     # Screen Drawing

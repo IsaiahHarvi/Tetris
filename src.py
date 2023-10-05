@@ -66,14 +66,20 @@ DROP_INTERVAL =  1000 + (250 * score/1000)  # Drop every second and add .25 seco
 
 # DRAW FUNCTIONS
 def drawGrid(screen=screen):
-    for row in range(ROWS):
-        for col in range(COLS):
-            x = GRID_OFFSET_X + col * BLOCK_SIZE
-            y = GRID_OFFSET_Y + row * BLOCK_SIZE
-            pygame.draw.rect(screen, (150, 150, 150), (x, y, BLOCK_SIZE, BLOCK_SIZE), 1)  # Slightly lighter color for inner grid
+    # Draw the NES Border
+    border_color = (0, 0, 0)  # Black
+    border_rect = pygame.Rect(GRID_OFFSET_X-5, GRID_OFFSET_Y-4, WIDTH+9, HEIGHT+10)
+    pygame.draw.rect(screen, border_color, border_rect)
+
+    # Draw the white lines inside the grid
+    #for row in range(ROWS):
+    #    for col in range(COLS):
+    #        x = GRID_OFFSET_X + col * BLOCK_SIZE
+    #        y = GRID_OFFSET_Y + row * BLOCK_SIZE
+    #        pygame.draw.rect(screen, (150, 150, 150), (x, y, BLOCK_SIZE, BLOCK_SIZE), 1)  # Slightly lighter color for inner grid
     
     # Draw the thick border around the game grid
-    pygame.draw.rect(screen, (255,255,255), (GRID_OFFSET_X - 4, GRID_OFFSET_Y - 4, WIDTH + 2 * 4, HEIGHT + 2 * 4), 4)
+    pygame.draw.rect(screen, (255,255,255), (GRID_OFFSET_X - 4, GRID_OFFSET_Y - 4, WIDTH + 2 * 4, HEIGHT + 2 * 4), 5)
     
     # Draw the outer NEXT box
     pygame.draw.rect(screen, (255, 255, 255), (NEXT_BOX_X, NEXT_BOX_Y, NEXT_BOX_WIDTH, NEXT_BOX_HEIGHT), 4)
@@ -89,7 +95,8 @@ def drawGrid(screen=screen):
     # Draw the "SCORE" label
     font = pygame.font.SysFont(None, 36)  
     label = font.render("SCORE", True, (255, 255, 255))
-    screen.blit(label, (SCORE_BOX_X + (SCORE_BOX_WIDTH - label.get_width()) // 2, SCORE_BOX_Y + SCORE_BOX_HEIGHT + 10))
+    screen.blit(label, (SCORE_BOX_X + (SCORE_BOX_WIDTH 
+    - label.get_width()) // 2, SCORE_BOX_Y + SCORE_BOX_HEIGHT + 10))
     
     
 # Draw next piece inside of the box created by the grid
@@ -105,7 +112,11 @@ def drawNextPiece(piece, screen=screen):
     offsetY = (NEXT_BOX_HEIGHT - pieceHeight) // 2
     
     for block in piece.blocks:
-        pygame.draw.rect(screen, piece.BLOCK_COLOR, (NEXT_BOX_X + (block[0] - min_x)*BLOCK_SIZE + offsetX, NEXT_BOX_Y + (block[1] - min_y)*BLOCK_SIZE + offsetY, BLOCK_SIZE, BLOCK_SIZE))
+        blockPixel_x = NEXT_BOX_X + (block[0] - min_x) * BLOCK_SIZE + offsetX
+        blockPixel_y = NEXT_BOX_Y + (block[1] - min_y) * BLOCK_SIZE + offsetY
+
+        pygame.draw.rect(screen, darkerShade(piece.BLOCK_COLOR), (NEXT_BOX_X + (block[0] - min_x)*BLOCK_SIZE + offsetX, NEXT_BOX_Y + (block[1] - min_y)*BLOCK_SIZE + offsetY, BLOCK_SIZE, BLOCK_SIZE))
+        pygame.draw.rect(screen, piece.BLOCK_COLOR, (blockPixel_x + 3, blockPixel_y + 3, BLOCK_SIZE - 6, BLOCK_SIZE - 6))
 
 # Draw Sound button
 def soundButton(text, screen=screen):
@@ -126,16 +137,23 @@ def drawBoard(screen=screen, board=board):
         for x in range(COLS):
             if board[y][x]:
                 pixel_x, pixel_y = grid_to_pixel(x, y)
-                pygame.draw.rect(screen, board[y][x], (pixel_x, pixel_y, BLOCK_SIZE, BLOCK_SIZE))
+                pygame.draw.rect(screen, darkerShade(board[y][x]), (pixel_x, pixel_y, BLOCK_SIZE, BLOCK_SIZE))
+                pygame.draw.rect(screen, board[y][x], (pixel_x + 3, pixel_y + 3, BLOCK_SIZE - 6, BLOCK_SIZE - 6))
+
+                
 
 # HELPER FUNCTIONS 
 # Compute the pixel coordinates of a block given its grid coordinates
 def grid_to_pixel(grid_x, grid_y):
     return GRID_OFFSET_X + grid_x * BLOCK_SIZE, GRID_OFFSET_Y + grid_y * BLOCK_SIZE
 
+# Darken RGB values of a color
+def darkerShade(color, shade_percentage=0.7):
+    return tuple(int(value * shade_percentage) for value in color)
+
 # Check if the piece has collided with the board or the ground
 def collision(blocks, board=board, screen=screen):
-    for x, y in blocks:
+    for x, y in blocks:  
         if y >= ROWS-1 or board[y+1][x]:
             if y <= -1 or board[y][x]:
                 return 2
@@ -167,8 +185,44 @@ def rotateBlock(block, center):
     return center[0] + new_rel_x, center[1] + new_rel_y
 
 # PIECE CLASSES
-class Square:
+class Piece:
+    def __init__(self, grid_x, grid_y, color):
+        self.BLOCK_COLOR = color
+        self.blocks = []
+    
+        # Movement
+    def move(self, dx, dy):
+        positions = [(x + dx, y + dy) for x, y in self.blocks]
+        
+        # Check boundaries
+        if any(x < 0 or x >= COLS or y >= ROWS for x, y in positions):
+            return
+        self.blocks = positions
+
+    # Rotate the piece around its center block
+    def rotate(self):
+        center = self.blocks[2]
+        new_blocks = [rotateBlock(block, center) for block in self.blocks]
+        
+        # Check boundaries and collisions before accepting the new positions
+        if any(x < 0 or x >= COLS or y < 0 or y >= ROWS for x, y in new_blocks):
+            return
+        self.blocks = new_blocks
+
+    # Draw the piece to the screen
+    def draw(self, screen=screen):
+        self.darkerShade = darkerShade(self.BLOCK_COLOR)
+        for x, y in self.blocks:
+            # Convert grid coordinates to pixel coordinates
+            pixel_x = GRID_OFFSET_X + x * BLOCK_SIZE
+            pixel_y = GRID_OFFSET_Y + y * BLOCK_SIZE
+            pygame.draw.rect(screen, self.darkerShade, (pixel_x, pixel_y, BLOCK_SIZE, BLOCK_SIZE))
+            pygame.draw.rect(screen, self.BLOCK_COLOR, (pixel_x + 3, pixel_y + 3, BLOCK_SIZE - 6, BLOCK_SIZE - 6))
+
+# Children of Piece class
+class Square(Piece):
     def __init__ (self, grid_x=(COLS // 2 - 1), grid_y=0):
+        super().__init__(grid_x, grid_y, (255, 255, 0))
         self.BLOCK_COLOR = (255, 255, 0)
         self.ID = "SQ"
 
@@ -180,33 +234,14 @@ class Square:
             (grid_x + 1, grid_y + 1)
         ]
 
-    # Movement
-    def move(self, dx, dy):
-        positions = [(x + dx, y + dy) for x, y in self.blocks]
-        
-        # Check boundaries
-        if any(x < 0 or x >= COLS or y >= ROWS for x, y in positions):
-            return
-        self.blocks = positions
-
-    # Rotate the piece around its center block
     def rotate(self):
         pass # What is the point of rotating a 2x2 object?
 
-    # Draw the piece to the screen
-    def draw(self, screen=screen):
-        for x, y in self.blocks:
-            # Convert grid coordinates to pixel coordinates
-            pixel_x = GRID_OFFSET_X + x * BLOCK_SIZE
-            pixel_y = GRID_OFFSET_Y + y * BLOCK_SIZE
-            pygame.draw.rect(screen, self.BLOCK_COLOR, (pixel_x, pixel_y, BLOCK_SIZE, BLOCK_SIZE))
-
 # L-Shaped Piece (two variations)
-class L:
+class L(Piece):
     def __init__ (self, grid_x=(COLS // 2 - 1), grid_y=0):
         variation = random.randint(0, 1)
-        self.BLOCK_COLOR = [(0, 0, 255), (255, 165, 0)][variation]
-        self.ID = "L"
+        super().__init__(grid_x, grid_y, [(0, 0, 255), (255, 165, 0)][variation])
 
         # Using two different types of grid coordinates for blocks
         self.blocks = [
@@ -222,79 +257,23 @@ class L:
             (grid_x - 2, grid_y+1),
         ])][variation]
 
-    # Movement
-    def move(self, dx, dy):
-        positions = [(x + dx, y + dy) for x, y in self.blocks]
-        
-        # Check boundaries
-        if any(x < 0 or x >= COLS or y >= ROWS for x, y in positions):
-            return
-        self.blocks = positions
-
-    # Rotate the piece around its center block
-    def rotate(self):
-        center = self.blocks[2]  # Assuming the center block is always the second one.
-        new_blocks = [rotateBlock(block, center) for block in self.blocks]
-        
-        # Check boundaries and collisions before accepting the new positions
-        if any(x < 0 or x >= COLS or y < 0 or y >= ROWS for x, y in new_blocks):
-            return
-        self.blocks = new_blocks
-
-    # Draw the piece to the screen
-    def draw(self, screen):
-        for x, y in self.blocks:
-            # Convert grid coordinates to pixel coordinates
-            pixel_x = GRID_OFFSET_X + x * BLOCK_SIZE
-            pixel_y = GRID_OFFSET_Y + y * BLOCK_SIZE
-            pygame.draw.rect(screen, self.BLOCK_COLOR, (pixel_x, pixel_y, BLOCK_SIZE, BLOCK_SIZE))
-
 # T-Shaped Piece
-class T:
+class T(Piece):
     def __init__ (self, grid_x=(COLS // 2 - 1), grid_y=0):
-        self.BLOCK_COLOR = (204, 0, 204)
-        self.ID = "T"
+        super().__init__(grid_x, grid_y, (204, 0, 204))
 
         # Using grid coordinates for blocks
         self.blocks = ([ 
             (grid_x, grid_y),
             (grid_x-1, grid_y),
+            (grid_x, grid_y+1),
             (grid_x + 1, grid_y),
-            (grid_x, grid_y+1)
         ])
 
-    # Movement
-    def move(self, dx, dy):
-        positions = [(x + dx, y + dy) for x, y in self.blocks]
-        
-        # Check boundaries
-        if any(x < 0 or x >= COLS or y >= ROWS for x, y in positions):
-            return
-        self.blocks = positions
-
-    # Rotate the piece around its center block
-    def rotate(self):
-        center = self.blocks[3]
-        new_blocks = [rotateBlock(block, center) for block in self.blocks]
-        
-        # Check boundaries and collisions before accepting the new positions
-        if any(x < 0 or x >= COLS or y < 0 or y >= ROWS for x, y in new_blocks):
-            return
-        self.blocks = new_blocks
-
-    # Draw the piece to the screen
-    def draw(self, screen):
-        for x, y in self.blocks:
-            # Convert grid coordinates to pixel coordinates
-            pixel_x = GRID_OFFSET_X + x * BLOCK_SIZE
-            pixel_y = GRID_OFFSET_Y + y * BLOCK_SIZE
-            pygame.draw.rect(screen, self.BLOCK_COLOR, (pixel_x, pixel_y, BLOCK_SIZE, BLOCK_SIZE))
-
 # Straight Piece
-class I:
+class I(Piece):
     def __init__ (self, grid_x=(COLS // 2 - 1), grid_y=0):
-        self.BLOCK_COLOR = (0, 255, 255)
-        self.ID = "I"
+        super().__init__(grid_x, grid_y, (0, 255, 255))
 
         # Using grid coordinates for blocks
         self.blocks = ([ 
@@ -304,39 +283,12 @@ class I:
             (grid_x+3, grid_y)
         ])
 
-    # Movement
-    def move(self, dx, dy):
-        positions = [(x + dx, y + dy) for x, y in self.blocks]
-                
-        # Check boundaries
-        if any(x < 0 or x >= COLS or y >= ROWS for x, y in positions):
-            return
-        self.blocks = positions
-
-    # Rotate the piece around its center block
-    def rotate(self):
-        center = self.blocks[2]
-        new_blocks = [rotateBlock(block, center) for block in self.blocks]
-        
-        # Check boundaries and collisions before accepting the new positions
-        if any(x < 0 or x >= COLS or y < 0 or y >= ROWS for x, y in new_blocks):
-            return
-        self.blocks = new_blocks
-
-    # Draw the piece to the screen
-    def draw(self, screen):
-        for x, y in self.blocks:
-            # Convert grid coordinates to pixel coordinates
-            pixel_x = GRID_OFFSET_X + x * BLOCK_SIZE
-            pixel_y = GRID_OFFSET_Y + y * BLOCK_SIZE
-            pygame.draw.rect(screen, self.BLOCK_COLOR, (pixel_x, pixel_y, BLOCK_SIZE, BLOCK_SIZE))
 
 # S-Shaped Piece (two variations)
-class S:
+class S(Piece):
     def __init__ (self, grid_x=(COLS // 2 - 1), grid_y=0):
         variation = random.randint(0,1)
-        self.BLOCK_COLOR = [(50, 205, 50), (255, 0 ,0)][variation]
-        self.ID = "S"
+        super().__init__(grid_x, grid_y, [(50, 205, 50), (255, 0 ,0)][variation])
 
         # Using grid coordinates for blocks
         self.blocks = [
@@ -350,33 +302,6 @@ class S:
             (grid_x+2, grid_y+1)
              ]) 
         ][variation]
-
-    # Movement
-    def move(self, dx, dy):
-        positions = [(x + dx, y + dy) for x, y in self.blocks]
-        
-        # Check boundaries
-        if any(x < 0 or x >= COLS or y >= ROWS for x, y in positions):
-            return
-        self.blocks = positions
-
-    # Rotate the piece around its center block
-    def rotate(self):
-        center = self.blocks[2]
-        new_blocks = [rotateBlock(block, center) for block in self.blocks]
-        
-        # Check boundaries and collisions before accepting the new positions
-        if any(x < 0 or x >= COLS or y < 0 or y >= ROWS for x, y in new_blocks):
-            return
-        self.blocks = new_blocks
-
-    # Draw the piece to the screen
-    def draw(self, screen):
-        for x, y in self.blocks:
-            # Convert grid coordinates to pixel coordinates
-            pixel_x = GRID_OFFSET_X + x * BLOCK_SIZE
-            pixel_y = GRID_OFFSET_Y + y * BLOCK_SIZE
-            pygame.draw.rect(screen, self.BLOCK_COLOR, (pixel_x, pixel_y, BLOCK_SIZE, BLOCK_SIZE))
 
 # List of all pieces
 pieces = [Square, L, T, I, S]
