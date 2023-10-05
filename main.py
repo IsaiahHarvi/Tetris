@@ -133,7 +133,6 @@ def gameLoop():
                             piece.move(0, 1)
                     lastHardDrop = dropTrigger  # variable to track the last hard drop time
 
-
                 if event.key in mappedKeys['rotate']: # R - Rotate
                     piece.rotate()
 

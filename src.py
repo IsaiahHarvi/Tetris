@@ -231,6 +231,7 @@ def rotateBlock(block, center):
     new_rel_x, new_rel_y = -rel_y, rel_x
     return center[0] + new_rel_x, center[1] + new_rel_y
 
+
 # PIECE CLASSES
 class Piece:
     def __init__(self, grid_x, grid_y, color):
@@ -329,7 +330,6 @@ class I(Piece):
             (grid_x+2, grid_y),
             (grid_x+3, grid_y)
         ])
-
 
 # S-Shaped Piece (two variations)
 class S(Piece):
