@@ -1,8 +1,6 @@
 from src import *
 
 def menu():
-    global inMenu, inGame
-    inMenu, inGame = True, False
     screen.fill((0, 0, 0)) # Clear screen with black
     
     font = pygame.font.SysFont(None, 100)
@@ -25,7 +23,7 @@ def menu():
 
     pygame.display.update()
     
-    while inMenu:
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -33,13 +31,14 @@ def menu():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_s:
                     gameLoop()
+                    return
                 if event.key == pygame.K_q:
                     pygame.quit()
                     exit()
 
 # Game Loop
 def gameLoop():
-    global inMenu, soundOn, inGame, inMenu # State variables
+    global soundOn # State variable
 
     pieceQueue =  [pieces[random.randint(0, len(pieces)-1)] for _ in range(10)] # Queue of pieces, one more is added everytime a piece is placed
     piece = pieceQueue.pop()()  # Start with the first piece
@@ -51,11 +50,10 @@ def gameLoop():
         "score" : 0 # Current score
     }
     LEVEL = scoreDict["clearedRows"] // 10 # Level is the number of rows cleared divided by 10
-    DROP_INTERVAL =  800.16 - (83.35 * LEVEL)  # Like the NES--Drop every 800milisecond  and add subtract 83 miliseconds every 10 rows
-    lastDrop = pygame.time.get_ticks() # Variable to track time since the last drop to move the block down every 1 sec
-
-    inGame, inMenu = True, False
-    while inGame:
+    LOWER_INTERVAL =  800.16 - (83.35 * LEVEL)  # Like the NES--Drop every 800milisecond  and add subtract 83 miliseconds every 10 rows
+    lastLower = pygame.time.get_ticks() # Variable to track time since the last drop to move the block down every 1 sec
+    lastHardDrop = 0 # Variable to track time since the last hard drop to prevent double drops
+    while True:
         screen.fill((110, 110, 110)) # Grey Background
         clk.tick(60)
 
@@ -73,9 +71,9 @@ def gameLoop():
 
         # Lower Piece every second
         currentTime = pygame.time.get_ticks()
-        if currentTime - lastDrop > DROP_INTERVAL:
+        if currentTime - lastLower > LOWER_INTERVAL:
             piece.move(0, 1)  # Move down by one grid unit
-            lastDrop = currentTime
+            lastLower = currentTime
 
         # If collision, but not block out
         if collision(piece.blocks, board) == 1:
@@ -126,11 +124,15 @@ def gameLoop():
                     
                 if event.key in mappedKeys['down']: # Down Arrow/S - Move down
                     piece.move(0, 1)  # Move down by one grid unit
-                    lastDrop = pygame.time.get_ticks() # Reset the last drop time so it doesnt double lower on top of the user input
+                    lastLower = pygame.time.get_ticks() # Reset the last drop time so it doesnt double lower on top of the user input
 
                 if event.key in mappedKeys['drop']: # Space/Enter - Drop Piece
-                    while collision(piece.blocks, board) == 0: # Move down until a collision
-                        piece.move(0, 1)
+                    dropTrigger = pygame.time.get_ticks() # Get the time of the drop
+                    if dropTrigger - lastHardDrop > 500: # If the last drop was more than 500 miliseconds ago 
+                        while collision(piece.blocks, board) == 0: # Move down until a collision
+                            piece.move(0, 1)
+                    lastHardDrop = dropTrigger  # variable to track the last hard drop time
+
 
                 if event.key in mappedKeys['rotate']: # R - Rotate
                     piece.rotate()
