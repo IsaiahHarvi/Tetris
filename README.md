@@ -61,3 +61,8 @@ Welcome to the NES Style Tetris repository! This project recreates the classic T
     - **Tetris (4 lines)**: 3600 points
 
 ...
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
