@@ -62,15 +62,15 @@ clk = pygame.time.Clock()
 
 # Load Assets
 try:
-    pygame.display.set_icon(pygame.image.load(ASSETS_DIR + "\\icon.PNG")) # Load icon
-    pygame.mixer.music.load(ASSETS_DIR + "\\soundtrack.mp3") # Load soundtrack
-    loseSound = pygame.mixer.Sound(ASSETS_DIR + "\\lose.wav") # Load lose sound
-    clearSound = pygame.mixer.Sound(ASSETS_DIR + "\\clear.wav") # Load clear sound
-    dropSound = pygame.mixer.Sound(ASSETS_DIR + "\\drop.wav") # Load drop sound
-    rotateSound = pygame.mixer.Sound(ASSETS_DIR + "\\rotate.wav") # Load rotate sound
-    highScore = int((open(ASSETS_DIR + "\\highScore.txt", "r").readline())) # Load high score
+    pygame.display.set_icon(pygame.image.load(ASSETS_DIR + "/Icon.PNG")) # Load icon
+    pygame.mixer.music.load(ASSETS_DIR + "/soundtrack.mp3") # Load soundtrack
+    loseSound = pygame.mixer.Sound(ASSETS_DIR + "/lose.wav") # Load lose sound
+    clearSound = pygame.mixer.Sound(ASSETS_DIR + "/clear.wav") # Load clear sound
+    dropSound = pygame.mixer.Sound(ASSETS_DIR + "/drop.wav") # Load drop sound
+    rotateSound = pygame.mixer.Sound(ASSETS_DIR + "/rotate.wav") # Load rotate sound
+    highScore = int((open(ASSETS_DIR + "/highScore.txt", "r").readline())) # Load high score
     assets = True
-except IndexError: # If assets are not found, run without them
+except Exception as e: # If assets are not found, run without them
     assets = False
     highScore = 0
 
