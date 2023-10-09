@@ -68,9 +68,12 @@ try:
     dropSound = pygame.mixer.Sound(ASSETS_DIR + "/drop.wav") # Load drop sound
     rotateSound = pygame.mixer.Sound(ASSETS_DIR + "/rotate.wav") # Load rotate sound
     highScore = int((open(ASSETS_DIR + "/highScore.txt", "r").readline())) # Load high score
+    overlay = pygame.image.load(ASSETS_DIR + "/overlay.png") # Load NES Overlay
     assets = True
+    drawOverlay = True # Set this to false if you do not want the NES overlay
 except Exception as e: # If assets are not found, run without them
     assets = False # Assets are not found
+    drawOverlay = False
     highScore = 0 # High score is 0 (since it is not saved)
 
 # Create the screen
@@ -112,6 +115,9 @@ def drawGrid(screen=screen):
     screen.blit(scoreLabel, (SCORE_BOX_X + (SCORE_BOX_WIDTH - scoreLabel.get_width()) // 2, SCORE_BOX_Y + SCORE_BOX_HEIGHT + 10)) # Center the label
     nextLabel = pygame.font.SysFont(None, 36).render("NEXT", True, (255, 255, 255)) # Next label
     screen.blit(nextLabel, (NEXT_BOX_X + (NEXT_BOX_WIDTH - nextLabel.get_width()) // 2, NEXT_BOX_Y + NEXT_BOX_HEIGHT + 10)) # Center the label
+
+    if assets and overlay:
+        screen.blit(overlay, (-1.5, -6.5)) # Overlay
 
     
 # Draw next piece inside of the box created by the grid
