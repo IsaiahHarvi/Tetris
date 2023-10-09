@@ -2,37 +2,30 @@ from src import *
 
 def menu():
     screen.fill((0, 0, 0)) # Clear screen with black
-    
-    font = pygame.font.SysFont(None, 100)
-    label = font.render("TETRIS", True, (255, 255, 255))
+    label = pygame.font.SysFont(None, 100).render("TETRIS", True, (255, 255, 255))
     screen.blit(label, (int(SCREEN_X / 2 - label.get_width() / 2), int(SCREEN_Y / 4 - label.get_height() / 2)))
 
-    instructions_font = pygame.font.SysFont(None, 32)
-    instructions = [
-        "Press S to Start",
-        "Press Q to Quit"
-    ]
-    for index, line in enumerate(instructions):
-        label = instructions_font.render(line, True, (255, 255, 255))
+    # Display instructions on the menu
+    for index, line in enumerate(["Press S to Start", "Press Q to Quit"]):
+        label = pygame.font.SysFont(None, 32).render(line, True, (255, 255, 255))
         screen.blit(label, (int(SCREEN_X / 2 - label.get_width() / 2), int(SCREEN_Y / 2 + index * 40)))
     
-   # Display the high score
-    high_score_font = pygame.font.SysFont(None, 32)
-    high_score_label = high_score_font.render(f"HIGH SCORE: {highScore}", True, (255, 255, 255))
+    # Display the high score on the menu
+    high_score_label = pygame.font.SysFont(None, 32).render(f"HIGH SCORE: {highScore}", True, (255, 255, 255))
     screen.blit(high_score_label, (int(SCREEN_X / 2 - high_score_label.get_width() / 2), int(SCREEN_Y / 4 + label.get_height())+ 30))
 
     pygame.display.update()
     
     while True:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT: # X button
                 pygame.quit()
                 exit()
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.KEYDOWN: # Start
                 if event.key == pygame.K_s:
                     gameLoop()
                     return
-                if event.key == pygame.K_q:
+                if event.key == pygame.K_q: # Quit
                     pygame.quit()
                     exit()
 
@@ -124,11 +117,11 @@ def gameLoop():
                     
                 if event.key in mappedKeys['down']: # Down Arrow/S - Move down
                     piece.move(0, 1)  # Move down by one grid unit
-                    lastLower = pygame.time.get_ticks() # Reset the last drop time so it doesnt double lower on top of the user input
+                    lastLower = pygame.time.get_ticks() # Reset the last auto lower time so it doesnt double lower again on top of the user input
 
                 if event.key in mappedKeys['drop']: # Space/Enter - Drop Piece
                     dropTrigger = pygame.time.get_ticks() # Get the time of the drop
-                    if dropTrigger - lastHardDrop > 500: # If the last drop was more than 500 miliseconds ago 
+                    if dropTrigger - lastHardDrop > 500:  # If the last drop was more than 500 miliseconds ago 
                         while collision(piece.blocks, board) == 0: # Move down until a collision
                             piece.move(0, 1)
                     lastHardDrop = dropTrigger  # variable to track the last hard drop time
@@ -151,11 +144,9 @@ def gameLoop():
                     else:
                         pygame.mixer.music.pause()
 
-        # Draw Piece
-        piece.draw(screen)
+        piece.draw(screen) # Draw Piece
+        pygame.display.update() # Update Screen
 
-        # Update Screen
-        pygame.display.update()
 
 if __name__ == "__main__":
-    menu()
+    menu() # Start in the menu
